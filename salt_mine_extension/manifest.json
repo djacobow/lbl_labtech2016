@@ -1,0 +1,21 @@
+{
+    "manifest_version": 2,
+    "name": "Mine-ify",
+    "short_name": "Mine-ify",
+    "description": "Changes the name of our workplace.",
+    "version": "0.0.1",
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.lbl.gov/*"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_end"
+        }
+    ],
+    "icons": {
+        "128": "salt.png"
+    }
+}

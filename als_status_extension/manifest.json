@@ -1,0 +1,21 @@
+{
+ "name": "ALS Status Icon",
+ "short_name": "ALS Status Icon",
+ "manifest_version": 2,
+ "version": "0.0.1",
+ "description": "Show the ALS Status in Chrome",
+ "browser_action": {
+  "default_icon": {
+   "38": "question.png"
+  },
+  "default_title": "ALS Status",
+  "default_popup": "popup.html"
+ },
+ "background": {
+  "scripts": ["bground.js"]
+ },
+ "permissions": [ "https://controls.als.lbl.gov/" ],
+ "icons": {
+   "128": "als.png"
+ }
+}
