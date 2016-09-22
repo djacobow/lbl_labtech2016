@@ -3,11 +3,10 @@
 from __future__ import print_function
 import random
 import gzip
-import zlib 
-from HTMLParser import HTMLParser
 import urllib2
 from StringIO import StringIO
-
+import re
+import json
 
 # --------------- Helpers that build all of the responses ----------------------
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
@@ -64,63 +63,19 @@ def handle_session_end_request():
         card_title, speech_output, None, should_end_session))
 
 
-class my_parser(HTMLParser):
-    def __init__(self):
-        self.edata = {
-         'done_R': False,
-         'done_D': False,
-         'done_L': False,
-         'in_R': False,
-         'in_D': False,
-         'in_L': False,
-         'D': '',
-         'R': '',
-         'L': '',
-        }
-        HTMLParser.__init__(self)
-    def handle_starttag(self, tag, attrs):
-        if tag == 'p' :
-            print(attrs)
-            is_winprob = False
-            party = None
-            if True:
-                for attr in attrs:
-                    if attr[0] == 'data-key' and attr[1] == 'winprob':
-                        is_winprob = True
-                    if attr[0] == 'data-party':
-                        party = attr[1]
-                self.edata['started'] = True
-                if is_winprob:
-                    if not self.edata['done_R']:
-                        self.edata['in_R'] = party == 'R'
-                    if not self.edata['done_D']:
-                        self.edata['in_D'] = party == 'D'
-                    if not self.edata['done_L']:
-                        self.edata['in_L'] = party == 'L'
-
-    def handle_endtag(self, tag):
-        if tag == 'p':
-            if self.edata['in_D']: 
-                self.edata['in_D'] = False
-                self.edata['done_D'] = True
-            if self.edata['in_R']: 
-                self.edata['in_R'] = False
-                self.edata['done_R'] = True
-            if self.edata['in_L']: 
-                self.edata['in_L'] = False
-                self.edata['done_L'] = True
-
-    def handle_data(self, data):
-        print(data)
-        if self.edata['in_D']:
-            self.edata['D'] += data
-        if self.edata['in_R']:
-            self.edata['R'] += data
-        if self.edata['in_L']:
-            self.edata['L'] += data
-
-    def getResults(self):
-        return self.edata
+# There is a beautiful, rich json string embedded in this html. Let's
+# extract and parse it.
+def extract_election_info(htmlstring):
+    extract_re = re.compile(r'race\.stateData\s=\s(.*);\s*race\.pathPrefix')
+    m = extract_re.search(htmlstring)
+    if m:
+        json_string = m.group(1)
+        try:
+            data = json.loads(json_string)
+            return data
+        except:
+            pass
+    return None
 
 def election_prob(intent, session):
     req = urllib2.Request('https://projects.fivethirtyeight.com/2016-election-forecast/')
@@ -137,16 +92,21 @@ def election_prob(intent, session):
         data = resp.read()
 
     if data is not None:
-        parser = my_parser()
-        parser.feed(data)
-        results = parser.getResults()
+        pdata = extract_election_info(data)
+
+        parties = {
+          'D': 'Hillary Clinton',
+          'R': 'Donald Trump',
+          'L': 'Gary Johnson',
+        }
+        results = {}
+        for party in parties:
+            v = pdata['latest'][party]['models']['now']['winprob']
+            results[party] = str(v) + '%'
+
         resp = "If the election were held right now, Nate Silver predicts "
-        if 'D' in results:
-            resp += "Hillary Clinton has a " + results['D'] + ' probability of winning. '
-        if 'R' in results:
-            resp += "Donald Trump has a " + results['R'] + ' probability of winning. '
-        if 'L' in results:
-            resp += "Gary Johnsnon has a " + results['L'] + ' probability of winning. '
+        for party in parties:
+            resp += parties[party] + " has a " + results[party] + ' probability of winning. '
         return build_response({}, build_speechlet_response("Right now", resp, "", True))
 
 
@@ -172,8 +132,6 @@ def on_intent(intent_request, session):
         return election_prob(intent, session)
     else:
         raise ValueError("Invalid intent")
-
-
 
 
 # --------------- Main handler ------------------
