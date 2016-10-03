@@ -3,6 +3,7 @@ var last_data = []; // data stored/kept from the last iteration
 // to be called whenever a fetch goes badly
 function whoops(e) {
   console.log(e);
+  chrome.browserAction.setTitle({'title': 'ALS Status could not contact feed data feed.'});
   chrome.browserAction.setIcon({'path': 'question.png'});
   chrome.browserAction.setBadgeText({ 'text': ''});
 };
@@ -36,6 +37,10 @@ function handle_load_data() {
           var icon = 'up.png';
           if (val == 0) icon = 'down.png';
           chrome.browserAction.setIcon({'path': icon});
+        } else if (label == 'Comment') {
+          chrome.browserAction.setTitle({ 
+            'title': val
+          });
         } else if (label == 'Beam Current') {
           chrome.browserAction.setBadgeText({ 
             'text': Math.round(val).toString()
