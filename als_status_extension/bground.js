@@ -6,7 +6,7 @@ function whoops(e) {
   chrome.browserAction.setTitle({'title': 'ALS Status could not contact feed data feed.'});
   chrome.browserAction.setIcon({'path': 'question.png'});
   chrome.browserAction.setBadgeText({ 'text': ''});
-};
+}
 
 // function that will listen for requests from any
 // popups, asking to have the last fetched ALS 
@@ -28,20 +28,20 @@ chrome.runtime.onMessage.addListener(
 function handle_load_data() {
   if (this.status === 200) {
     data = JSON.parse(this.responseText);
-    if (!(data == null)) {
+    if (data !== null) {
       last_data = data;
       for (var i=0;i<data.length;i++) {
-        var val = data[i]['val']
-        var label = data[i]['label'];
-        if (label == 'Beam Available') {
+        var val = data[i].val;
+        var label = data[i].label;
+        if (label === 'Beam Available') {
           var icon = 'up.png';
-          if (val == 0) icon = 'down.png';
+          if (val) icon = 'down.png';
           chrome.browserAction.setIcon({'path': icon});
         } else if (label == 'Comment') {
           chrome.browserAction.setTitle({ 
             'title': val
           });
-        } else if (label == 'Beam Current') {
+        } else if (label === 'Beam Current') {
           chrome.browserAction.setBadgeText({ 
             'text': Math.round(val).toString()
           });
@@ -49,7 +49,7 @@ function handle_load_data() {
       }
       return;
     }
-  };
+  }
   whoops(); // never get here in successful case
 }
 
@@ -65,7 +65,7 @@ function checkALS() {
    xhr.send();
  } catch(e) {
    whoops();
- };
+ }
  setTimeout(checkALS, 60 * 1000);
 }
 
